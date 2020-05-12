@@ -1,19 +1,20 @@
 package cmdline;
 
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 /**
- * Encapsulate command line paring & validation logic
+ * Encapsulate command line paring &amp; validation logic
  * 
  * @author Wayne Zhang
  */
 
 public final class CmdLineArgumentParser {
     // Map indexed by argument short name
-    private final Map<String, CmdLineArgument> shortNameMap = new HashMap<>();
+    // Note: use linked map to keep argument define order
+    private final Map<String, CmdLineArgument> shortNameMap = new LinkedHashMap<>();
     // Map indexed by argument long name
-    private final Map<String, CmdLineArgument> longNameMap = new HashMap<>();
+    private final Map<String, CmdLineArgument> longNameMap = new LinkedHashMap<>();
     
     // Has argument parsed? that is parse(_) method called?
     private boolean hasParsed = false;
@@ -159,7 +160,7 @@ public final class CmdLineArgumentParser {
     /**
      * Get the argument format to build help message when argument is wrong
      * 
-     * @return 
+     * @return help info line built
      */
     public String getHelpInfo(){
         StringBuilder buf = new StringBuilder();
