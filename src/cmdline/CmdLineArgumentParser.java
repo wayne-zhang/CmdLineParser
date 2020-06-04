@@ -19,6 +19,20 @@ public final class CmdLineArgumentParser {
     // Has argument parsed? that is parse(_) method called?
     private boolean hasParsed = false;
     
+    public static CmdLineArgumentParser parse(Class caller, String[] argDef, String[] args){
+        CmdLineArgumentParser instance = null;
+        try{
+            instance = new CmdLineArgumentParser(argDef);
+            instance.parse(args);
+        }catch(IllegalArgumentException e){
+            instance.help(caller);
+            
+            System.exit(-1);
+        }
+        
+        return instance;
+    }
+    
     public CmdLineArgumentParser(){
         
     }
@@ -106,22 +120,18 @@ public final class CmdLineArgumentParser {
             }
         }
     }
-	
+    
     /**
-     * Get the value of argument supplied in the command line
-	 * by short name and lang name
+     * Get argument value with defaults if not defined
      * 
-     * @param name1 argument short name or long name, e.g -a  or --argument
-     * @param name2 argument short name or long name, e.g -a  or --argument	 
-     * @return argument value. An empty string returned if it is a no value argument
-     */	
-    public String getArgumentValue(String name1, String name2){
-        String value = getArgumentValue(name1);
-        if(value != null){
-            return value;
-        }
-
-        return getArgumentValue(name2);
+     * @param name argument name
+     * @param defaultValue default value if not supplied
+     * @return argument value if supplied or default value
+     */
+    public String getArgumentValue(String name, String defaultValue){
+        String value = getArgumentValue(name);
+        
+        return value == null ? defaultValue : value;
     }	
     
     /**
@@ -147,10 +157,6 @@ public final class CmdLineArgumentParser {
         }
         
         return arg.getValue();
-    }
-    
-    public boolean isArgumentSupplied(String name1, String name2){
-        return getArgumentValue(name1, name2) != null;
     }
 	
     public boolean isArgumentSupplied(String name){
