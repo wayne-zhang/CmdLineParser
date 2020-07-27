@@ -54,7 +54,7 @@ public class CmdLineArgumentParserTest{
         System.out.println("-v: " + parser.isArgumentSupplied("-v"));
         
         //System.out.println(parser.getHelpInfo());
-        parser.help(CmdLineArgumentParserTest.class);
+        parser.help();
     }
     
     private void testNoArgumentValueSupplied(){

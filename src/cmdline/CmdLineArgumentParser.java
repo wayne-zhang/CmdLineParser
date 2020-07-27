@@ -19,13 +19,17 @@ public final class CmdLineArgumentParser {
     // Has argument parsed? that is parse(_) method called?
     private boolean hasParsed = false;
     
-    public static CmdLineArgumentParser parse(Class caller, String[] argDef, String[] args){
+    public static CmdLineArgumentParser parse(String[] argsDef, String[] args){
         CmdLineArgumentParser instance = null;
         try{
-            instance = new CmdLineArgumentParser(argDef);
+            instance = new CmdLineArgumentParser(argsDef);
             instance.parse(args);
         }catch(IllegalArgumentException e){
-            instance.help(caller);
+            if(instance != null){
+                instance.help();
+            }else{
+                e.printStackTrace();
+            }
             
             System.exit(-1);
         }
@@ -178,13 +182,29 @@ public final class CmdLineArgumentParser {
         return buf.toString();
     }
     
-    public void help(){
-        String caller = Thread.currentThread().getStackTrace()[2].getClassName();
+    /**
+     * Get the class name that owns main() method
+     * 
+     * @return class name that owns main method or "unknown"
+     *         if main method is not on call stack
+     */
+    private static String getMainClass(){
+        StackTraceElement[] stack = Thread.currentThread().getStackTrace();
+        for(StackTraceElement se : stack){
+            if(se.getMethodName().equals("main")){
+                return se.getClassName();
+            }
+        }
         
-        help(caller, System.out);
+        return "Unknown";
     }
-    public void help(Class runner){
-        help(runner.getName(), System.out);
+    
+    public void help(){
+        help(getMainClass());
+    }
+    
+    public void help(String runner){
+        help(runner, System.out);
     }
     
     public void help(String runner, java.io.PrintStream target){

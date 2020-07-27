@@ -328,6 +328,22 @@ public class CmdLineArgument implements java.io.Serializable {
             return this;
         }
         
+        public CmdLineArgumentBuilder enumValues(String... values){
+            checkBuilt();
+            
+            if(enumValues == null){
+                enumValues = new HashSet<>();
+            }
+            
+            for(String enumValue : values){
+                if(!enumValues.contains(enumValue)){                         
+                    enumValues.add(enumValue);
+                }
+            }
+            
+            return this;
+        }        
+        
         public CmdLineArgumentBuilder enumValue(String enumValue){
             checkBuilt();
             
