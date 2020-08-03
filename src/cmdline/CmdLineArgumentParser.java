@@ -20,21 +20,7 @@ public final class CmdLineArgumentParser {
     private boolean hasParsed = false;
     
     public static CmdLineArgumentParser parse(String[] argsDef, String[] args){
-        CmdLineArgumentParser instance = null;
-        try{
-            instance = new CmdLineArgumentParser(argsDef);
-            instance.parse(args);
-        }catch(IllegalArgumentException e){
-            if(instance != null){
-                instance.help();
-            }else{
-                e.printStackTrace();
-            }
-            
-            System.exit(-1);
-        }
-        
-        return instance;
+        return new CmdLineArgumentParser(argsDef, args);
     }
     
     public CmdLineArgumentParser(){

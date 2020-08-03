@@ -28,6 +28,8 @@ import java.util.Set;
  */
 
 public class CmdLineArgument implements java.io.Serializable {
+    private static final long serialVersionUID = 1L;
+    
     private final String shortName;
     private final String longName;
     private final boolean hasValue;  // if the argument has value?
