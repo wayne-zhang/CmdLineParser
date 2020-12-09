@@ -1,6 +1,8 @@
 package cmdline;
         
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -23,11 +25,18 @@ import java.util.Set;
  *    -v,--verbose,false
  *    -i,--input,true,,true
  * 
+ * Also, enumeration and mandatory can be defined by CmdLineRule, eg.
+ * 
+ *    Mandatory rule:
+ *          -a isMandatory
+ * 
+ *    Enumeration rule:
+ *          -a isIn (create,update,delete)
  * 
  * @author Wayne Zhang
  */
 
-public class CmdLineArgument implements java.io.Serializable {
+class CmdLineArgument implements java.io.Serializable {
     private static final long serialVersionUID = 1L;
     
     private final String shortName;
@@ -36,6 +45,8 @@ public class CmdLineArgument implements java.io.Serializable {
     private final Set<String> enumValues;
     private String value;    
     private boolean isMandatory;     // Ehancmement - mandatory argument
+    // Argument rules, such as p1 dependsOn p2 or p3 conflictsWith p4
+    private List<CmdLineArgumentRule> rules = new ArrayList<>();
     
     public CmdLineArgument(String shortName, String longName, boolean hasValue,
             Set<String> enumValues, boolean isMandatory){
@@ -79,7 +90,7 @@ public class CmdLineArgument implements java.io.Serializable {
         // mandatory flag supplied
         try{
             boolean isMandatory = false;
-            if(params.length == 5){
+            if(params.length > 4){
                 isMandatory = toBoolean(params[4]);
             }
 
@@ -89,6 +100,13 @@ public class CmdLineArgument implements java.io.Serializable {
         }catch(RuntimeException e){
             throw new IllegalArgumentException(define);
         }
+    }
+    
+    public void addRule(CmdLineArgumentRule rule){
+        // set the first argument
+        rule.setArg1(this);
+        
+        rules.add(rule);
     }
     
     public String getShortName(){
@@ -152,20 +170,42 @@ public class CmdLineArgument implements java.io.Serializable {
         this.isMandatory = isMandatory;
     }
     
-    public void validate(){
-        if(!hasValue && value != null && !value.isEmpty()){
-            throw new IllegalArgumentException(getName() 
-                    + " is a no value argument but set a value: " + value);
-        }
-        
-        if(isMandatory && !isSupplied()){
+    public void validate(CmdLineArgumentParser parser){
+        if(isMandatory() && !isSupplied()){
             throw new IllegalArgumentException(getName() 
                     + " is a manditory argument but has not supplied");            
         }
         
-        if(isEnumValue() && !enumValues.contains(value)){
-            throw new IllegalArgumentException(getName() + " value (" + value + ") "
-                    + "is not permit, it can be: " + getEnumValuesAsString());
+        // for other validations, only validate when argument is supplied.
+        if(isSupplied()){
+            final String value = getValue();
+
+            if(!hasValue() && value != null && !value.isEmpty()){
+                throw new IllegalArgumentException(getName() 
+                        + " is a no value argument but set a value: " + value);
+            }
+
+            if(isEnumValue() && !enumValues.contains(value)){
+                throw new IllegalArgumentException(getName() + " value (" + value + ") "
+                        + "is not permit, it can be: " + getEnumValuesAsString());
+            }
+        }
+        
+        // validate rules if any
+        for(CmdLineArgumentRule rule : rules){
+            rule.validate(parser);
+        }
+    }
+    
+    /**
+     * Apply argument value to the app by reflection
+     * 
+     * @param app 
+     */
+    public void applyTo(Object app){
+        if(isSupplied()){
+            // by convenstion, field (of app) is the long name (without prefix --)
+            ReflectionHelper.applyValue(app, getLongName().substring(2), getValue());
         }
     }
     
@@ -234,7 +274,7 @@ public class CmdLineArgument implements java.io.Serializable {
      * @param s
      * @return 
      */
-    private String toWords(String s){
+    static String toWords(String s) {
         StringBuilder buf = new StringBuilder();
         
         for(char c : s.toCharArray()){

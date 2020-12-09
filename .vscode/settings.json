@@ -4,5 +4,9 @@
         "**/.project": true,
         "**/.settings": true,
         "**/.factorypath": true
-    }
+    },
+    "java.completion.enabled": false,
+    "java.debug.settings.enableRunDebugCodeLens": false,
+    "java.home": "e:/apps/jdk11",
+    "java.dependency.syncWithFolderExplorer": false
 }

@@ -19,22 +19,44 @@ public final class CmdLineArgumentParser {
     // Has argument parsed? that is parse(_) method called?
     private boolean hasParsed = false;
     
+    /**
+     * Define &amp; parse arguments at one call.
+     * 
+     * Deprecated as it doesn't support command line argument rules.
+     * 
+     * @param argsDef argument definitions
+     * @param args command line arguments
+     * @return command line argument parser built
+     * @deprecated
+     */
+    @Deprecated
     public static CmdLineArgumentParser parse(String[] argsDef, String[] args){
         return new CmdLineArgumentParser(argsDef, args);
     }
     
     public CmdLineArgumentParser(){
+        // support -h/--help?
+        defineArgument("-h,--help,false");
+    }
+    
+    public CmdLineArgumentParser(String... argumentDefinitions){
+        this();
         
+        defineArguments(argumentDefinitions);
     }
     
-    public CmdLineArgumentParser(String... argumentDefination){
-        for(String define: argumentDefination){
-            defineArgument(define);
-        }
-    }
-    
-    public CmdLineArgumentParser(String[] argumentDefination, String[] args){
-        this(argumentDefination);
+    /**
+     * Deprecated as it doesn't support command line argument rules.
+     * 
+     * There is no chance to define argument rules.
+     * 
+     * @param argumentDefinition command line argument definitions
+     * @param args command line arguments
+     * @deprecated
+     */
+    @Deprecated
+    public CmdLineArgumentParser(String[] argumentDefinition, String[] args){
+        this(argumentDefinition);
         
         parse(args);
     }
@@ -46,6 +68,12 @@ public final class CmdLineArgumentParser {
         defineArgument(arg);
         
         return arg;
+    }
+    
+    public void defineArguments(String... argumentDefination){
+        for(String define: argumentDefination){
+            defineArgument(define);
+        }        
     }
     
     // define an argument, using a builder for example
@@ -62,7 +90,21 @@ public final class CmdLineArgumentParser {
         
         shortNameMap.put(arg.getShortName(), arg);
         longNameMap.put(arg.getLongName(), arg);
-    }    
+    }
+    
+    public void addArgumentRules(String... rules){
+        for(String rule : rules){
+            CmdLineArgumentRule argRule = new CmdLineArgumentRule(rule);
+            CmdLineArgument arg = getArgument(argRule.getArg1Name());
+            if(arg == null){
+                throw new RuntimeException(
+                        "CmdLineArgument rule definatin error, argument not found: " +
+                         rule
+                );
+            }
+            arg.addRule(argRule);
+        }
+    }
     
     public void parse(String... args) {    
         hasParsed = true;
@@ -97,17 +139,41 @@ public final class CmdLineArgumentParser {
                 }else{
                     argDef.setValue(""); // set empty value to indicate argument exist!
                 }
-            }else{
+            }else if(!arg.isEmpty()){
                 throw new IllegalArgumentException("Argument " + arg + " can't be recognised");
             }
         }
         
+        // is help? check help before validation
+        if(isArgumentSupplied("-h")){
+            help();
+            
+            System.exit(0);
+        }
+        
         for(CmdLineArgument arg : shortNameMap.values()){
-            if(arg.isSupplied()){
-                arg.validate();
-            } else if(arg.isMandatory()) { // always validate mandatory arguments
-                arg.validate();
-            }
+            arg.validate(this);
+        }
+    }
+    
+    /**
+     * Set cmd line argument values to the app by reflection.
+     * 
+     * @param app application which arguments applied to
+     */
+    public void setArgumentsTo(Object app){
+        for(CmdLineArgument arg : shortNameMap.values()){
+            arg.applyTo(app);
+        }
+    }
+    
+    /**
+     * Clear the values parsed last time and ready next parse.
+     * It is not useful in real world but unit tests.
+     */
+    public void reset(){
+        for(CmdLineArgument arg : shortNameMap.values()){
+            arg.setValue(null);
         }
     }
     
@@ -135,18 +201,26 @@ public final class CmdLineArgumentParser {
             throw new RuntimeException("Command line arguments hasn't been parsed.");
         }
         
-        CmdLineArgument arg = null;
-        if(name.startsWith("--")){                
-            arg = longNameMap.get(name);
-        }else{
-            arg = shortNameMap.get(name);
-        }
+        CmdLineArgument arg = getArgument(name);
         
         if(arg == null){
             throw new RuntimeException("Argument '" + name + "' not defined");
         }
         
         return arg.getValue();
+    }
+    
+    /**
+     * Get argument by name
+     * @param argumentName argument name, short or long
+     * @return CmdLineArgument define or null if not defined
+     */
+    CmdLineArgument getArgument(String argumentName){
+        if(argumentName.startsWith("--")){                
+            return longNameMap.get(argumentName);
+        }else{
+            return shortNameMap.get(argumentName);
+        }        
     }
 	
     public boolean isArgumentSupplied(String name){
