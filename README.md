@@ -24,5 +24,44 @@ for example
    -i,--input,true,,true
 
 
-@author Wayne Zhang
-
+An example of how to use CmdLineArgumentParser:
+	
+	pulbic static void main(String[] args){
+        CmdLineArgumentParser parser = new CmdLineArgumentParser();
+        parser.defineArguments(
+            "-f,--file,true,,true",
+            "-d,--scanDir,true,,true",
+            "-b,--backupDir,true",
+            "-a,--action,true,ADD|REMOVE,true",
+            "-l,--line,true,,true",
+            "-x,--excludePath,true",
+            "-w,--where,true,BEGIN|END,false",
+            "-c,--criteria,true",
+            "-v,--verbose,false"
+        );
+        
+        // --where and --criteria valid only when --action is ADD
+        parser.addArgumentRules(
+            "-c dependsOn -a=ADD",
+            "-w dependsOn -a=ADD"
+        );
+        
+        try{
+            parser.parse(args);
+        }catch(Exception e){
+            e.printStackTrace();            
+            parser.help();
+            
+            System.exit(1);
+        }
+        
+        File scanDir = new File(parser.getArgumentValue("-d"));
+        Action action = Action.valueOf(parser.getArgumentValue("-a"));
+       
+		String criteria = null;
+		if(parser.isArgumentSupplied("-c")){
+			// long name can be used too
+			criteria = parser.getArgumentValue("--criteira");
+		}
+	
+	}
